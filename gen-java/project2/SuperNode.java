@@ -22,12 +22,7 @@ public class SuperNode {
  }
 
  public static void main(String[] args) {
-   int mode = -1;
-   if(args.length != 0)
-   {
-     mode = Integer.parseInt(args[0]);
-   }
-  StartsimpleServer(new SuperNodeService.Processor<SuperNodeServiceHandler>(new SuperNodeServiceHandler(mode)));
+  StartsimpleServer(new SuperNodeService.Processor<SuperNodeServiceHandler>(new SuperNodeServiceHandler()));
  }
 
 }
