@@ -1,0 +1,2 @@
+thrift --gen java server.thrift
+thrift --gen java supernode.thrift
