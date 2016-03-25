@@ -30,16 +30,13 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
   }
 
  @Override
- public String Join(String IP, int Port) throws TException {
+ public boolean Join(String IP, int Port) throws TException {
 
 
 
 	 System.out.println("Node "+ IP+" : "+Port+" requests for joining Replica Network...");
-  if(isBusy)
-  {
-    return "NACK";
-  }
-  String NodeList = " ";
+  
+    String NodeList = " ";
 
 	   NodeInfo newNode = new NodeInfo();
 	   newNode.address = IP;
@@ -47,31 +44,25 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
 
 	   ListOfNodes.add(newNode);
 
-	  for(int x = 0; x < ListOfNodes.size(); x++)
-	  {
-		  NodeList += ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port) +  ",";
-	  }
-
-	  isBusy = true;
+	  
 	  System.out.println("Fileserver "+ IP+" : "+Port+" joined  Replica Network...");
-	  return NodeList;
+	  return true;
  
  }
 
  @Override
- public String GetNode() throws TException {
-  int x = randomGenerator.nextInt(ListOfNodes.size());
-  return  ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port) ;
+ public String GetNodeList() throws TException {
+
+  for(int x = 0; x < ListOfNodes.size(); x++)
+	  {
+		  NodeList += ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port) +  ",";
+	  }
+
+  return NodeList;
+
 
  }
 
- @Override
- public boolean PostJoin(String IP, int Port) throws TException {
-
-   isBusy = false;
-
-   return isBusy;
- }
 
 
 }

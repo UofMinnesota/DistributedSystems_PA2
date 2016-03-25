@@ -46,22 +46,22 @@ static boolean USE_LOCAL = false;
    String supernodeAddr = "csel-x29-10";
    if(USE_LOCAL) supernodeAddr = "localhost";
    SuperNodeTransport = new TSocket(supernodeAddr, 9090); // csel-x29-10
-   //SuperNodeTransport = new TSocket("localhost", 9090); //csel-x29-10
    SuperNodeTransport.open();
 
    TProtocol SuperNodeProtocol = new TBinaryProtocol(SuperNodeTransport);
    SuperNodeService.Client supernodeclient = new SuperNodeService.Client(SuperNodeProtocol);
 
-  System.out.println("Requesting SuperNode for joining DHT through Join Call...");
-  String dht_list;
-  dht_list = supernodeclient.Join(getHostAddress(),nodePort);
-  System.out.println("The returned list is "+ dht_list);
+  System.out.println("Requesting SuperNode for joining Replica Network through Join Call...");
+  
+  if(supernodeclient.Join(getHostAddress(),nodePort)){
+  System.out.println("The returned list is "+ supernodeclient.GetNodeList());
+  }
 
-   if(dht_list.equals("NACK")){
+  else{
 	   System.out.println("Supernode busy...");
       }
-   else{
-	   System.out.println("Joining DHT...");
+	   
+    System.out.println("Joining DHT...");
 
 	   ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
 	   NodeName myName;
@@ -72,13 +72,11 @@ static boolean USE_LOCAL = false;
        ListOfNodes = FileServiceHandler.getListOfNodes();
 
 
-	   supernodeclient.PostJoin(getHostAddress(),nodePort);
 	   SuperNodeTransport.close();
 
 	   System.out.println("Successfully joined DHT...");
 	   System.out.println("Starting simple NodeServer...");
 	   server.serve();
-   }
 
   } catch (Exception e) {
    e.printStackTrace();
