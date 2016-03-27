@@ -21,12 +21,12 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
 
 
 
-  
+
   //TODO redefine constructor later
   public SuperNodeServiceHandler()
   {
-  
-  
+
+
   }
 
  @Override
@@ -35,7 +35,7 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
 
 
 	 System.out.println("Node "+ IP+" : "+Port+" requests for joining Replica Network...");
-  
+
     String NodeList = " ";
 
 	   NodeInfo newNode = new NodeInfo();
@@ -44,18 +44,18 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
 
 	   ListOfNodes.add(newNode);
 
-	  
+
 	  System.out.println("Fileserver "+ IP+" : "+Port+" joined  Replica Network...");
 	  return true;
- 
+
  }
 
  @Override
  public String GetNodeList() throws TException {
-
+   String NodeList = "";
   for(int x = 0; x < ListOfNodes.size(); x++)
 	  {
-		  NodeList += ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port) +  ",";
+		  NodeList += ListOfNodes.get(x).address + ":" + String.valueOf(((NodeInfo)ListOfNodes.get(x)).port) +  ",";
 	  }
 
   return NodeList;
