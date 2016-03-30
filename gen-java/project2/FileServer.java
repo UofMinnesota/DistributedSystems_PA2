@@ -40,6 +40,12 @@ static boolean USE_LOCAL = false;
 static boolean isCoordinator = false;
 static int nodePort;
 static String nodeName;
+static String result;
+//static ArrayList<NodeName> ListOfNodes; // For coordinator
+//static 
+
+
+
  public static void StartsimpleServer(FileService.Processor<FileServiceHandler> processor) {
   try {
 	  //nodeName = new String(getHostAddress());
@@ -63,23 +69,27 @@ static String nodeName;
   
   //nodeName = getHostAddress();
   System.out.println("My name is"+nodeName+"my port is "+nodePort);
-  if(supernodeclient.Join(getHostAddress(),nodePort, isCoordinator)){
-  System.out.println("The returned list is "+ supernodeclient.GetNodeList());
-  }
+  
+  
+  //ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
+  //NodeName myName;
+  String result;
 
-  else{
-	   System.out.println("Supernode busy...");
-      }
+
+  //send DHTList string to the nodeservicehandler
+  //myName = FileServiceHandler.getMyName();
+  
+  result = supernodeclient.Join(getHostAddress(),nodePort, isCoordinator); 
+  
+//  if(){
+//  System.out.println("The returned list is "+ supernodeclient.GetNodeList());
+//  }
+//
+//  else{
+//	   System.out.println("Supernode busy...");
+//      }
 	   
     System.out.println("Joining Replica network...");
-
-	   ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
-	   NodeName myName;
-
-
-       //send DHTList string to the nodeservicehandler
-       myName = FileServiceHandler.getMyName();
-       ListOfNodes = FileServiceHandler.getListOfNodes();
 
 
 	   SuperNodeTransport.close();
@@ -106,7 +116,7 @@ static String nodeName;
 	   }
    }
    //System.out.println("My name is"+nodeName);
-  StartsimpleServer(new FileService.Processor<FileServiceHandler>(new FileServiceHandler(isCoordinator,getHostAddress(),nodePort)));
+  StartsimpleServer(new FileService.Processor<FileServiceHandler>(new FileServiceHandler(isCoordinator,getHostAddress(),nodePort, result)));
  }
 
  private static String getHostAddress(){

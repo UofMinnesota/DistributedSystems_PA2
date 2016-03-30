@@ -35,6 +35,7 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
   private static boolean CoordinatorAvailable = false;
   private static boolean CoordinatorChanged = false;
   private static NodeInfo CoordinatorName;
+  private static String CoordinatorNameString;
   
 
 
@@ -48,11 +49,12 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
   }
 
  @Override
- public boolean Join(String IP, int Port, boolean isCoordinator) throws TException {
+ public String Join(String IP, int Port, boolean isCoordinator) throws TException {
 
 
 
 	 System.out.println("Node "+ IP+" : "+Port+" requests for joining Replica Network...");
+	 
   
     String NodeList = " ";
 
@@ -60,65 +62,82 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
 	   newNode.address = IP;
 	   newNode.port = Port;
 	   
-	   
 	   if(isCoordinator){
 		   System.out.println("Setting coordinator as "+IP+":"+Port+" ...");
 		   CoordinatorAvailable = true;
 		   CoordinatorChanged = true;
 		   CoordinatorName = newNode;
+		   CoordinatorNameString =IP+":"+Integer.toString(Port);
+		   System.out.println("Coordinator Name is "+CoordinatorNameString);
+		   //return GetNodeList();
 	   }
+	   
 
 	   ListOfNodes.add(newNode);
 	   
 	   if(CoordinatorAvailable){
-		   System.out.println("Updating nodelist to coordinator "+ IP+" : "+Port+" ...");
-		   
-		   try{
-		   TTransport NodeTransport;
-		   System.out.println("Connecting to: " + CoordinatorName.address + ":" + CoordinatorName.port);
-		   NodeTransport = new TSocket(CoordinatorName.address, CoordinatorName.port);
-		   NodeTransport.open();
-
-		   TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
-		   FileService.Client nodeclient = new FileService.Client(NodeProtocol);
-		   
-		   nodeclient.makeCoordinator(GetNodeList());
-		   
-		   NodeTransport.close();
-		   }
-		   catch (TException x) {
-			   x.printStackTrace();
-		   }
+		   System.out.println("Updating nodelist to coordinator "+ IP+" : "+Port+" ..."+ "Node list is "+ GetNodeList());
+		  
 	   }
 	   
-	   if(CoordinatorChanged){
-		   System.out.println("Updating Coordinator information to replicas...");
-		   
-		   for(int x = 0; x < ListOfNodes.size(); x++)
-			{
-		   try{   
-			   TTransport NodeTransport;
-			   System.out.println("Connecting to: " + ListOfNodes.get(x).address + ":" + ListOfNodes.get(x).port);
-			   NodeTransport = new TSocket(ListOfNodes.get(x).address, ListOfNodes.get(x).port);
-			   NodeTransport.open();
+		if (CoordinatorChanged) {
+			System.out.println("Updating Coordinator information to replicas...");
 
-			   TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
-			   FileService.Client nodeclient = new FileService.Client(NodeProtocol);
-			   
-			   nodeclient.setCoordinatorInfo(ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port));
-			   
-			   NodeTransport.close();
-			   }
-			   catch (TException xx) {
-				   xx.printStackTrace();
-			   }
+			for (int x = 0; x < ListOfNodes.size(); x++) {
+				if (!((CoordinatorName.address.equals(ListOfNodes.get(x).address)) && (CoordinatorName.port == ListOfNodes.get(x).port))&& 
+					  !((newNode.address.equals(ListOfNodes.get(x).address)) && (newNode.port == ListOfNodes.get(x).port))) {
+					try {
+						TTransport NodeTransport;
+						System.out.println("Connecting to: " + ListOfNodes.get(x).address + ":" + ListOfNodes.get(x).port);
+						NodeTransport = new TSocket(ListOfNodes.get(x).address,ListOfNodes.get(x).port);
+						NodeTransport.open();
+
+						TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
+						FileService.Client nodeclient = new FileService.Client(
+								NodeProtocol);
+
+						nodeclient
+								.setCoordinatorInfo(ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port));
+						NodeTransport.close();
+					} catch (TException xx) {
+						xx.printStackTrace();
+					}
+				}
 			}
-		   
-	   }
-
+		}
+	   
+	  
 	  
 	  System.out.println("Fileserver "+ IP+" : "+Port+" joined  Replica Network...");
-	  return true;
+	  
+	  if(isCoordinator){
+		   return GetNodeList();
+	   }
+	  else if(CoordinatorAvailable){
+		  
+		  try {
+				TTransport NodeTransport;
+				System.out.println("Connecting to Coordinator: " + CoordinatorName.address + ":" + CoordinatorName.port);
+				NodeTransport = new TSocket(CoordinatorName.address,CoordinatorName.port);
+				NodeTransport.open();
+
+				TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
+				FileService.Client nodeclient = new FileService.Client(
+						NodeProtocol);
+
+				//nodeclient.setCoordinatorInfo(ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port));
+				nodeclient.makeCoordinator(GetNodeList());
+				NodeTransport.close();
+			} catch (TException xx) {
+				xx.printStackTrace();
+			}
+		  
+		  
+		  return CoordinatorNameString;
+	  }
+	  else{
+		  return "done";
+	  }
  
  }
 

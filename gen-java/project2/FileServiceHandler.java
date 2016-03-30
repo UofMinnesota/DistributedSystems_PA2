@@ -48,6 +48,7 @@ public class FileServiceHandler implements FileService.Iface {
   private static boolean isCoordinator = false;
   private static NodeName CoordinatorName;
   private static NodeName myName;
+  private static String joinResult; 
   private Random randomGenerator = new Random();
 
   public static ArrayList<NodeName> getListOfNodes(){
@@ -55,14 +56,16 @@ public class FileServiceHandler implements FileService.Iface {
 	  return ListOfNodes;
   }
 
-  public FileServiceHandler(boolean isC, String name, int port)
+  public FileServiceHandler(boolean isC, String name, int port, String result)
   {
     //if(max == -1) return;
     //maxNumNodes = max;
 	  myName = new NodeName(name,port,0);
 	  isCoordinator = isC;
+	  joinResult = result;
 	  //myName.setIP(name);
 	  //myName.setPort(port);
+	  System.out.println("Result obtained is "+ joinResult);
   }
 
   public static NodeName getMyName(){
@@ -181,6 +184,7 @@ public class FileServiceHandler implements FileService.Iface {
  @Override
  public boolean makeCoordinator(String ServerList) throws TException {
 	 
+	 System.out.println("List of servers obtained..."+ServerList);
 	 ListOfNodes=strToNodeNameArray(ServerList);
    return true;
  }
