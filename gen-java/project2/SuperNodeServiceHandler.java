@@ -33,6 +33,7 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
   private int num_keys = max_keys;
   ArrayList<Integer> ListOfID = new ArrayList<Integer>();
   private static boolean CoordinatorAvailable = false;
+  private static boolean CoordinatorChanged = false;
   private static NodeInfo CoordinatorName;
   
 
@@ -47,7 +48,7 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
   }
 
  @Override
- public boolean Join(String IP, int Port) throws TException {
+ public boolean Join(String IP, int Port, boolean isCoordinator) throws TException {
 
 
 
