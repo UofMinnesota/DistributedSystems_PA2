@@ -44,7 +44,9 @@ public class FileServiceHandler implements FileService.Iface {
   private static Map<String, String> files = new HashMap<String, String>();
 
   private static String DHTList;
-  private static int maxNumNodes = 16;
+  //private static int maxNumNodes = 16;
+  private static boolean isCoordinator = false;
+  private static NodeName CoordinatorName;
   private static NodeName myName;
   private Random randomGenerator = new Random();
 
@@ -53,10 +55,14 @@ public class FileServiceHandler implements FileService.Iface {
 	  return ListOfNodes;
   }
 
-  public FileServiceHandler(int max)
+  public FileServiceHandler(boolean isC, String name, int port)
   {
-    if(max == -1) return;
-    maxNumNodes = max;
+    //if(max == -1) return;
+    //maxNumNodes = max;
+	  myName = new NodeName(name,port,0);
+	  isCoordinator = isC;
+	  //myName.setIP(name);
+	  //myName.setPort(port);
   }
 
   public static NodeName getMyName(){
@@ -84,18 +90,7 @@ public class FileServiceHandler implements FileService.Iface {
     return filesArr;
   }
 
-  int keyHash(String key)
-  {
-      int k = (int)key.length();
-      int u = 0,n = 0;
-
-      for (int i=0; i<k; i++)
-      {
-          n = (int)key.charAt(i);
-          u += i*n%31;
-      }
-      return u%maxNumNodes;
-  }
+ 
 
 
   private static int findmyID(ArrayList<NodeName> nodeList){
@@ -126,7 +121,7 @@ public class FileServiceHandler implements FileService.Iface {
   public static NodeName strToNodeName(String input)
   {
     String data[] = input.split(":");
-    NodeName newNo = new NodeName(data[0].trim(),Integer.parseInt(data[1]),Integer.parseInt(data[2]));
+    NodeName newNo = new NodeName(data[0].trim(),Integer.parseInt(data[1]),0);
   
     return newNo;
   }
@@ -185,7 +180,19 @@ public class FileServiceHandler implements FileService.Iface {
 
  @Override
  public boolean makeCoordinator(String ServerList) throws TException {
-   return false;
+	 
+	 ListOfNodes=strToNodeNameArray(ServerList);
+   return true;
  }
+ 
+ @Override
+ public boolean setCoordinatorInfo(String Coordinator) throws TException{
+	
+	 CoordinatorName = strToNodeName(Coordinator);
+	return true; 
+ }
+ 
+ 
+
 
 }

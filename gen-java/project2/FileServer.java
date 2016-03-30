@@ -31,11 +31,19 @@ public class FileServer {
 
   return randomNum;
 }
+  
+  public FileServer(){
+	  getHostAddress();
+	  
+  }
 static boolean USE_LOCAL = false;
+static boolean isCoordinator = false;
+static int nodePort;
+static String nodeName;
  public static void StartsimpleServer(FileService.Processor<FileServiceHandler> processor) {
   try {
-
-      int nodePort = randInt(9000, 9080);
+	  //nodeName = new String(getHostAddress());
+     
    TServerTransport serverTransport = new TServerSocket(nodePort);
    TServer server = new TSimpleServer(
      new Args(serverTransport).processor(processor));
@@ -53,7 +61,9 @@ static boolean USE_LOCAL = false;
 
   System.out.println("Requesting SuperNode for joining Replica Network through Join Call...");
   
-  if(supernodeclient.Join(getHostAddress(),nodePort)){
+  //nodeName = getHostAddress();
+  System.out.println("My name is"+nodeName+"my port is "+nodePort);
+  if(supernodeclient.Join(getHostAddress(),nodePort, isCoordinator)){
   System.out.println("The returned list is "+ supernodeclient.GetNodeList());
   }
 
@@ -61,7 +71,7 @@ static boolean USE_LOCAL = false;
 	   System.out.println("Supernode busy...");
       }
 	   
-    System.out.println("Joining DHT...");
+    System.out.println("Joining Replica network...");
 
 	   ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
 	   NodeName myName;
@@ -74,8 +84,8 @@ static boolean USE_LOCAL = false;
 
 	   SuperNodeTransport.close();
 
-	   System.out.println("Successfully joined DHT...");
-	   System.out.println("Starting simple NodeServer...");
+	   System.out.println("Successfully joined replica network...");
+	   System.out.println("Starting simple FileServer...");
 	   server.serve();
 
   } catch (Exception e) {
@@ -84,18 +94,26 @@ static boolean USE_LOCAL = false;
  }
 
  public static void main(String[] args) {
-   int mode = -1;
+   //int mode = -1;
+	 nodePort = randInt(9000, 9080);
    if(args.length != 0)
    {
-     mode = Integer.parseInt(args[0]);
+     //mode = Integer.parseInt(args[0]);
+	   System.out.println(args[0]);
+	   if(args[0].equals("coordinator")){
+		   isCoordinator = true;
+		   System.out.println("I am a coordinator");
+	   }
    }
-  StartsimpleServer(new FileService.Processor<FileServiceHandler>(new FileServiceHandler(mode)));
+   //System.out.println("My name is"+nodeName);
+  StartsimpleServer(new FileService.Processor<FileServiceHandler>(new FileServiceHandler(isCoordinator,getHostAddress(),nodePort)));
  }
 
  private static String getHostAddress(){
 	 try {
 		   InetAddress addr = InetAddress.getLocalHost();
-		   	return (addr.getHostAddress());
+		   nodeName = addr.getHostAddress();
+		   	return (nodeName);
 		 } catch (UnknownHostException e) {
 			 return null;
 		 }
