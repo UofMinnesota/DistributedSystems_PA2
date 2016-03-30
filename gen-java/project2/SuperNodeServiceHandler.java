@@ -47,10 +47,10 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
   }
 
  @Override
- public boolean Join(String IP, int Port, boolean isCoordinator) throws TException {
+ public boolean Join(String IP, int Port) throws TException {
 
 
-	 boolean CoordinatorChanged = false;
+
 	 System.out.println("Node "+ IP+" : "+Port+" requests for joining Replica Network...");
   
     String NodeList = " ";
