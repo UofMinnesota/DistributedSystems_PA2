@@ -26,8 +26,6 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 public class FileServiceHandler implements FileService.Iface {
-	
-
 
   public static class  NodeInfo implements Comparable<NodeInfo>{
     String address = "";
@@ -85,6 +83,11 @@ public class FileServiceHandler implements FileService.Iface {
 	  return myName;
   }
 
+  public static ArrayList<NodeName> getNodes()
+  {
+    return ListOfNodes;
+  }
+
   public static int getNumberOfFiles()
   {
     return filestore.size();
@@ -136,6 +139,7 @@ public class FileServiceHandler implements FileService.Iface {
 
   public static NodeName strToNodeName(String input)
   {
+    System.out.println("Input is "+input);
     String data[] = input.split(":");
     NodeName newNo = new NodeName(data[0].trim(),Integer.parseInt(data[1]),0);
   
