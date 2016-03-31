@@ -8,7 +8,7 @@ import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TServer.Args;
 import org.apache.thrift.server.TSimpleServer;
-import org.apache.thrift.server.TThreadedServer;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -32,12 +32,12 @@ public class FileServer {
 
   return randomNum;
 }
-
+  
   public FileServer(){
 	  getHostAddress();
-
+	  
   }
-static boolean USE_LOCAL = true;
+static boolean USE_LOCAL = false;
 static boolean isCoordinator = false;
 static int nodePort;
 static String nodeName;
@@ -46,17 +46,19 @@ public static FileServiceHandler handler;
 public static FileService.Processor processor;
 public static int lastUpdatedReplica = 0;
 //static ArrayList<NodeName> ListOfNodes; // For coordinator
-//static
+//static 
 
 
 
  public static void StartsimpleServer(FileService.Processor<FileServiceHandler> processor) {
   try {
 	  //nodeName = new String(getHostAddress());
-
+     
    TServerTransport serverTransport = new TServerSocket(nodePort);
-   TServer server = new TThreadServer(
-     new Args(serverTransport).processor(processor));
+   //TServer server = new TSimpleServer(
+   //  new Args(serverTransport).processor(processor));
+   TServer server = new TThreadPoolServer(new
+           TThreadPoolServer.Args(serverTransport).processor(processor));
 
    System.out.println("Establishing connection with the SuperNode...");
 
@@ -70,11 +72,11 @@ public static int lastUpdatedReplica = 0;
    SuperNodeService.Client supernodeclient = new SuperNodeService.Client(SuperNodeProtocol);
 
   System.out.println("Requesting SuperNode for joining Replica Network through Join Call...");
-
+  
   //nodeName = getHostAddress();
   System.out.println("My name is"+nodeName+"my port is "+nodePort);
-
-
+  
+  
   //ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
   //NodeName myName;
   String result;
@@ -82,9 +84,13 @@ public static int lastUpdatedReplica = 0;
 
   //send DHTList string to the nodeservicehandler
   //myName = FileServiceHandler.getMyName();
+  
+  result = supernodeclient.Join(getHostAddress(),nodePort, isCoordinator); 
+ 
+  handler.setJoinResult(result);
+  System.out.println("---Result is------"+result);
 
-  result = supernodeclient.Join(getHostAddress(),nodePort, isCoordinator);
-
+  
 //  if(){
 //  System.out.println("The returned list is "+ supernodeclient.GetNodeList());
 //  }
@@ -92,7 +98,7 @@ public static int lastUpdatedReplica = 0;
 //  else{
 //	   System.out.println("Supernode busy...");
 //      }
-
+	   
     System.out.println("Joining Replica network...");
 
 
@@ -135,7 +141,7 @@ public static int lastUpdatedReplica = 0;
       TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
       FileService.Client nodeclient = new FileService.Client(NodeProtocol);
 
-      Boolean res = nodeclient.serverWrite("FileName", "content");
+      Boolean res = nodeclient.serverWrite("FileName", "content", 1);
     }
     catch(Exception e){
       System.out.println("Not able to connect: ");
@@ -172,13 +178,13 @@ public static void runBackgroundUpdateService(int port)
 	   if(args[0].equals("coordinator")){
 		   isCoordinator = true;
 		   System.out.println("I am a coordinator");
-       runBackgroundUpdateService(9092);
+       //runBackgroundUpdateService(9092);
 	   }
    }
    //System.out.println("My name is"+nodeName);
   //StartsimpleServer(new FileService.Processor<FileServiceHandler>(new FileServiceHandler(isCoordinator,getHostAddress(),nodePort, result)));
   try {
-      handler = new FileServiceHandler(isCoordinator,getHostAddress(),nodePort, result);
+      handler = new FileServiceHandler(isCoordinator,getHostAddress(),nodePort);
       processor = new FileService.Processor(handler);
 
       Runnable simple = new Runnable() {
@@ -208,3 +214,4 @@ public static void runBackgroundUpdateService(int port)
 
 
 }
+
