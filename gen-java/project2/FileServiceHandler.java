@@ -425,7 +425,9 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 	 String result="*** FILE NOT FOUND ***";
 	 System.out.println("---------------------------------Request for Reading file "+ Filename+" came to Coordinator...\nAssembling Read quorom...-------------------------");
 
-	 //Assembling read quorom here
+   NodeName NodeLatestCopy = new NodeName(" ",0,0); 
+	 boolean foundLatest=false;
+   //Assembling read quorom here
 	 Nr=randInt(N-Nw,N);
 	 System.out.println("Total Number of Replicas "+N+"  Write quorom size is.."+Nw+"  Read Quorum size is "+Nr);
 
@@ -444,7 +446,9 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 			System.out.println("Version for the file "+Filename+" from "+ ListOfNodes.get(quorom_indexes.get(i)).getIP()+":"+ListOfNodes.get(quorom_indexes.get(i)).getPort() +" of the Quorom... is "+version );
 
 			if(version>latestVersion){
+				foundLatest=true;
 				latestVersion = version;
+				NodeLatestCopy = new NodeName(ListOfNodes.get(quorom_indexes.get(i)).getIP(), ListOfNodes.get(quorom_indexes.get(i)).getPort(), 0);
 			}
 
 	  }
@@ -464,7 +468,9 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 				System.out.println("Version for the file "+Filename+" from "+ ListOfNodes.get(quorom_indexes.get(i)).getIP()+":"+ListOfNodes.get(quorom_indexes.get(i)).getPort() +" of the Quorom... is "+version );
 
 				if(version>latestVersion){
+					foundLatest=true;
 					latestVersion = version;
+					NodeLatestCopy = new NodeName(ListOfNodes.get(quorom_indexes.get(i)).getIP(), ListOfNodes.get(quorom_indexes.get(i)).getPort(), 0);
 				}
 
 				NodeTransport.close();
@@ -475,14 +481,14 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 	 }
 
 	 System.out.println("Latest Version for the file "+Filename+" is "+latestVersion );
-	 System.out.println("Reading back file "+Filename+" as version "+latestVersion );
+//	 System.out.println("Reading back file "+Filename+" as version "+latestVersion );
+   System.out.println("Reading back file "+Filename+" as version "+latestVersion + "from "+NodeLatestCopy.getIP()+":"+NodeLatestCopy.getPort() );
 
 
-	 for(int i=0; i<quorom_indexes.size();i++){
-		 System.out.println("Read list is .."+quorom_indexes.get(i));
-		 System.out.println("Node Names are "+ListOfNodes.get(quorom_indexes.get(i)).getIP());
-		 if(myName.getIP().equals(ListOfNodes.get(quorom_indexes.get(i)).getIP()) && myName.getPort() == ListOfNodes.get(quorom_indexes.get(i)).getPort()){
 
+	 if(foundLatest){
+		 if(myName.getIP().equals(NodeLatestCopy.getIP()) && myName.getPort() == NodeLatestCopy.getPort()){
+  
 				System.out.println("Reading File "+Filename+" with latest version "+latestVersion+" to the Quorom..." );
 				result = serverRead(Filename);
 
@@ -491,7 +497,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 			 try {
 
 				TTransport NodeTransport;
-				NodeTransport = new TSocket(ListOfNodes.get(quorom_indexes.get(i)).getIP(),ListOfNodes.get(quorom_indexes.get(i)).getPort());
+				NodeTransport = new TSocket(NodeLatestCopy.getIP(),NodeLatestCopy.getPort());
 				NodeTransport.open();
 
 				TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
