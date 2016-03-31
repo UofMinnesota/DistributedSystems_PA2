@@ -357,7 +357,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 }
 
  @Override
- public boolean serverWriteReq(String Filename, String Contents) throws TException {
+ public boolean serverWriteReq(final String Filename, final String Contents) throws TException {
    try {
       if(isRunningBg == false)
       {
@@ -396,6 +396,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
            newInfo.content = Contents;
            try{
            executeQueue.put(newInfo);
+           System.out.println("After execute queue");
          }
          catch(Exception e){
            System.out.println("Not added..");
