@@ -368,8 +368,11 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 
               try{
               //executeQueue.put(newInfo);
+              for(;;)
+              {
               asyncServerWriteReq((UpdateInfo)executeQueue.take());
               Thread.sleep(100);
+            }
             }
             catch(Exception e){
               System.out.println("Not added..");
@@ -394,8 +397,10 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
            UpdateInfo newInfo = new UpdateInfo();
            newInfo.filename = Filename;
            newInfo.content = Contents;
+           newInfo.isWrite = true;
            try{
            executeQueue.put(newInfo);
+           System.out.println("Added to the queue.");
          }
          catch(Exception e){
            System.out.println("Not added..");
