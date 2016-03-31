@@ -26,7 +26,7 @@ namespace java project2  // defines the namespace
               int getVersionNumber(1:string Filename), 
             
             //Interface for server from coordinator
-            bool serverWrite(1:string Filename 2:string Contents), //  
+            bool serverWrite(1:string Filename 2:string Contents 3:int Version), //  
             string serverRead(1:string Filename), //defines a method
 
             

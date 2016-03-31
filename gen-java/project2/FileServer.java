@@ -41,6 +41,7 @@ static boolean isCoordinator = false;
 static int nodePort;
 static String nodeName;
 static String result;
+static FileServiceHandler fsh;
 //static ArrayList<NodeName> ListOfNodes; // For coordinator
 //static 
 
@@ -73,13 +74,17 @@ static String result;
   
   //ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
   //NodeName myName;
-  String result;
 
 
   //send DHTList string to the nodeservicehandler
   //myName = FileServiceHandler.getMyName();
   
   result = supernodeclient.Join(getHostAddress(),nodePort, isCoordinator); 
+  
+  
+	  fsh.setJoinResult(result);
+	  System.out.println("---Result is------"+result);
+
   
 //  if(){
 //  System.out.println("The returned list is "+ supernodeclient.GetNodeList());
@@ -115,8 +120,8 @@ static String result;
 		   System.out.println("I am a coordinator");
 	   }
    }
-   //System.out.println("My name is"+nodeName);
-  StartsimpleServer(new FileService.Processor<FileServiceHandler>(new FileServiceHandler(isCoordinator,getHostAddress(),nodePort, result)));
+   fsh= new FileServiceHandler(isCoordinator, getHostAddress(), nodePort);
+   StartsimpleServer(new FileService.Processor<FileServiceHandler>(fsh));
  }
 
  private static String getHostAddress(){

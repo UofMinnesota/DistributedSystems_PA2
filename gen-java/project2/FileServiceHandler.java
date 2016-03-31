@@ -26,6 +26,8 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 public class FileServiceHandler implements FileService.Iface {
+	
+
 
   public static class  NodeInfo implements Comparable<NodeInfo>{
     String address = "";
@@ -41,7 +43,7 @@ public class FileServiceHandler implements FileService.Iface {
   }
 
   private static ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
-  private static Map<String, String> files = new HashMap<String, String>();
+  private static Map<String, FileStore> filestore = new HashMap<String, FileStore>();
 
   private static String DHTList;
   //private static int maxNumNodes = 16;
@@ -56,17 +58,27 @@ public class FileServiceHandler implements FileService.Iface {
 
 	  return ListOfNodes;
   }
+  
+  public void setJoinResult(String T){
+	  joinResult = T;
+	  
+	  if(isCoordinator){
+		  ListOfNodes=strToNodeNameArray(joinResult);
+		  N = ListOfNodes.size();  
+	  }
+	  else{
+		  CoordinatorName = strToNodeName(joinResult);
+	  }
+  }
+  
 
-  public FileServiceHandler(boolean isC, String name, int port, String result)
+  public FileServiceHandler(boolean isC, String name, int port)
   {
     //if(max == -1) return;
     //maxNumNodes = max;
 	  myName = new NodeName(name,port,0);
 	  isCoordinator = isC;
-	  joinResult = result;
-	  //myName.setIP(name);
-	  //myName.setPort(port);
-	  System.out.println("Result obtained is "+ joinResult);
+	  
   }
 
   public static NodeName getMyName(){
@@ -75,23 +87,23 @@ public class FileServiceHandler implements FileService.Iface {
 
   public static int getNumberOfFiles()
   {
-    return files.size();
+    return filestore.size();
   }
 
-  public static ArrayList<String> getFileNames()
+  public static ArrayList<FileStore> getFileNames()
   {
-    ArrayList<String> filesArr = new ArrayList<String>();
-    for (String name: files.keySet()){
+    ArrayList<FileStore> filestoreArr = new ArrayList<FileStore>();
+    for (String name: filestore.keySet()){
 
             String key =name.toString();
-            String value = files.get(name).toString();
+            FileStore value = filestore.get(name);
             //System.out.println(key);
-            filesArr.add(key);
+            filestoreArr.add(value);
 
 
 
           }
-    return filesArr;
+    return filestoreArr;
   }
 
  
@@ -165,12 +177,15 @@ public class FileServiceHandler implements FileService.Iface {
 	 // TODO send request to coordinator if I am not the coordinator
 	 if(isCoordinator){
 		 System.out.println("\n\n\nI am the coordinator... and I got a write request\n\n\n\n");
+		 result = serverWriteReq(Filename, Contents);
 		 
 	 }
 	 else{
 		 System.out.println("\n\n\nI am NOT the coordinator... and I got a write request\n\n\n\n");
 			try {
+				System.out.println("Before transport");
 				TTransport NodeTransport;
+				System.out.println("After transport");
 				System.out.println("Connecting to: " + CoordinatorName.getIP() + ":" + CoordinatorName.getPort());
 				NodeTransport = new TSocket(CoordinatorName.getIP(),CoordinatorName.getPort());
 				NodeTransport.open();
@@ -178,7 +193,7 @@ public class FileServiceHandler implements FileService.Iface {
 				TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
 				FileService.Client nodeclient = new FileService.Client(
 						NodeProtocol);
-
+				System.out.println("Forwarding the request for writing file"+Filename+" with contents "+ Contents+" to the coordinator..." );
 				result = nodeclient.serverWriteReq(Filename, Contents);
 					
 				
@@ -189,24 +204,27 @@ public class FileServiceHandler implements FileService.Iface {
 			
 	 }
   
-   System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
-  files.put(Filename, Contents);
+   
+  //filestore.put(Filename, Contents);
   return result;
  }
 
  
  @Override
  public String clientRead(String Filename) throws TException {
-     if(files.containsKey(Filename)) return (files.get(Filename));
+     //if(files.containsKey(Filename)) return (files.get(Filename));
      return "*** FILE NOT FOUND ***";
  }
 
   
  
  @Override
- public boolean serverWrite(String Filename, String Contents) throws TException {
+ public boolean serverWrite(String Filename, String Contents, int Version) throws TException {
 	 System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
-	  files.put(Filename, Contents);
+	  
+	 FileStore file = new FileStore(Filename,Contents, Version);
+	  
+	  filestore.put(Filename, file);
 	  return true;
  }
  
@@ -214,13 +232,15 @@ public class FileServiceHandler implements FileService.Iface {
  @Override
  public String serverRead(String Filename) throws TException {
 	 
-     if(files.containsKey(Filename)) return (files.get(Filename));
+     if(filestore.containsKey(Filename)) return (filestore.get(Filename).getContents());
      return "*** FILE NOT FOUND ***";
  }
  
  
  @Override
  public boolean serverWriteReq(String Filename, String Contents) throws TException {
+	 
+	 boolean result=false;
 	 System.out.println("Request for write of file "+ Filename+" and contents "+Contents+" Came to Coordinator...\nAssembling write quorom...");
 	 
 	 //Assembling write quorom here
@@ -228,28 +248,101 @@ public class FileServiceHandler implements FileService.Iface {
 	 System.out.println("Write quorom size is.."+Nw);
 	 
 	 ArrayList<Integer> quorom_indexes = uniquerands(Nw,N);
+	 int latestVersion=0;
+	 int version=0;
 	 
 	 for(int i=0; i<quorom_indexes.size();i++){
 		 System.out.println("Write list is .."+quorom_indexes.get(i));
+		 System.out.println("Node Names are "+ListOfNodes.get(quorom_indexes.get(i)).getIP());
+	  if(myName.getIP().equals(ListOfNodes.get(quorom_indexes.get(i)).getIP()) && myName.getPort() == ListOfNodes.get(quorom_indexes.get(i)).getPort()){
+			System.out.println("Connecting to: " + ListOfNodes.get(quorom_indexes.get(i)).getIP() + ":" + ListOfNodes.get(quorom_indexes.get(i)).getPort());
+			
+			System.out.println("Enquiring latest version for the file "+Filename+" to the Quorom..." );
+			version = getVersionNumber(Filename);
+			System.out.println("Version for the file "+Filename+" from "+ ListOfNodes.get(quorom_indexes.get(i)).getIP()+":"+ListOfNodes.get(quorom_indexes.get(i)).getPort() +" of the Quorom... is "+version );
+			
+			if(version>latestVersion){
+				latestVersion = version;
+			}
+			
+	  }
+	  else{
+		 try {
+			 	
+				TTransport NodeTransport;
+				System.out.println("Connecting to: " + ListOfNodes.get(quorom_indexes.get(i)).getIP() + ":" + ListOfNodes.get(quorom_indexes.get(i)).getPort());
+				NodeTransport = new TSocket(ListOfNodes.get(quorom_indexes.get(i)).getIP(),ListOfNodes.get(quorom_indexes.get(i)).getPort());
+				NodeTransport.open();
+
+				TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
+				FileService.Client nodeclient = new FileService.Client(
+						NodeProtocol);
+				System.out.println("Enquiring latest version for the file "+Filename+" to the Quorom..." );
+				version = nodeclient.getVersionNumber(Filename);
+				System.out.println("Version for the file "+Filename+" from "+ ListOfNodes.get(quorom_indexes.get(i)).getIP()+":"+ListOfNodes.get(quorom_indexes.get(i)).getPort() +" of the Quorom... is "+version );
+				
+				if(version>latestVersion){
+					latestVersion = version;
+				}
+				
+				NodeTransport.close();
+			} catch (TException xx) {
+				xx.printStackTrace();
+			}
+		 }
+	 }
+	 
+	 System.out.println("Latest Version for the file "+Filename+" is "+latestVersion );
+	 System.out.println("Writing back file "+Filename+" as version "+latestVersion++ );
+	 
+
+	 for(int i=0; i<quorom_indexes.size();i++){
+		 System.out.println("Write list is .."+quorom_indexes.get(i));
+		 System.out.println("Node Names are "+ListOfNodes.get(quorom_indexes.get(i)).getIP());
+		 if(myName.getIP().equals(ListOfNodes.get(quorom_indexes.get(i)).getIP()) && myName.getPort() == ListOfNodes.get(quorom_indexes.get(i)).getPort()){
+
+				System.out.println("Writing File "+Filename+" with latest version "+latestVersion+" to the Quorom..." );
+				result = serverWrite(Filename, Contents, latestVersion);
+		
+		 }
+		 else{
+			 try {
+			 	
+				TTransport NodeTransport;
+				NodeTransport = new TSocket(ListOfNodes.get(quorom_indexes.get(i)).getIP(),ListOfNodes.get(quorom_indexes.get(i)).getPort());
+				NodeTransport.open();
+
+				TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
+				FileService.Client nodeclient = new FileService.Client(
+						NodeProtocol);
+				System.out.println("Writing File "+Filename+" with latest version "+latestVersion+" to the Quorom..." );
+				result = nodeclient.serverWrite(Filename, Contents, latestVersion);
+				
+				NodeTransport.close();
+			} catch (TException xx) {
+				xx.printStackTrace();
+			}
+		 }
 	 }
 	 
 	 
 	 System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
-	  files.put(Filename, Contents);
-	  return true;
+	  //files.put(Filename, Contents);
+	  return result;
  }
  
 
  @Override
  public String serverReadReq(String Filename) throws TException {
 	 
-     if(files.containsKey(Filename)) return (files.get(Filename));
+     //if(files.containsKey(Filename)) return (files.get(Filename));
      return "*** FILE NOT FOUND ***";
  }
 
  @Override
  public int getVersionNumber(String Filename) throws TException {
-   return 0;
+	 if(filestore.containsKey(Filename)) return (filestore.get(Filename).getVersion());
+	 return -1;
  }
 
  @Override
