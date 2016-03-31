@@ -158,22 +158,34 @@ public class FileServiceHandler implements FileService.Iface {
 
  @Override
  public boolean clientWrite(String Filename, String Contents) throws TException {
-  return false;
+  
+   System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
+  files.put(Filename, Contents);
+  return true;
  }
 
- @Override
- public boolean serverWrite(String Filename, String Contents) throws TException {
-  return false;
- }
  
  @Override
  public String clientRead(String Filename) throws TException {
-   return "File not Found..";
+     if(files.containsKey(Filename)) return (files.get(Filename));
+     return "*** FILE NOT FOUND ***";
  }
+
+  
+ 
+ @Override
+ public boolean serverWrite(String Filename, String Contents) throws TException {
+	 System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
+	  files.put(Filename, Contents);
+	  return true;
+ }
+ 
 
  @Override
  public String serverRead(String Filename) throws TException {
-   return "File not Found..";
+	 
+     if(files.containsKey(Filename)) return (files.get(Filename));
+     return "*** FILE NOT FOUND ***";
  }
 
  @Override

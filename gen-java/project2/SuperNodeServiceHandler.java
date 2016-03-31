@@ -72,8 +72,17 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
 		   //return GetNodeList();
 	   }
 	   
-
+	   boolean presentFlag=false;
+	   for(int i=0;i<ListOfNodes.size();i++){
+		   if(ListOfNodes.get(i).address.equals(IP) && ListOfNodes.get(i).port == Port){
+			   presentFlag=true;
+			   break;
+		   }
+	   }
+	   
+	   if(!presentFlag){
 	   ListOfNodes.add(newNode);
+	   }
 	   
 	   if(CoordinatorAvailable){
 		   System.out.println("Updating nodelist to coordinator "+ IP+" : "+Port+" ..."+ "Node list is "+ GetNodeList());
