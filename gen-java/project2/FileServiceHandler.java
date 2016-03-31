@@ -209,12 +209,12 @@ public class FileServiceHandler implements FileService.Iface {
 
 	 // TODO send request to coordinator if I am not the coordinator
 	 if(isCoordinator){
-		 System.out.println("\n\n\nI am the coordinator... and I got a write request\n\n\n\n");
+		 System.out.println("\n\n\nI am the coordinator... and I got a read request\n\n\n\n");
 		 result = serverReadReq(Filename);
 
 	 }
 	 else{
-		 System.out.println("\n\n\nI am NOT the coordinator... and I got a write request\n\n\n\n");
+		 System.out.println("\n\n\nI am NOT the coordinator... and I got a read request\n\n\n\n");
 			try {
 				System.out.println("Before transport in Read..");
 				TTransport NodeTransport;
@@ -266,7 +266,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
   String Filename = updIn.filename;
   String Contents = updIn.content;
   boolean result=false;
-  System.out.println("Request for write of file "+ Filename+" and contents "+Contents+" Came to Coordinator...\nAssembling write quorom...");
+  System.out.println("-----------------------Request for write of file "+ Filename+" and contents "+Contents+" Came to Coordinator...\nAssembling write quorom...---------------------");
 
   //Assembling write quorom here
   Nw=randInt(Math.round((N+1)/2),N);
@@ -351,7 +351,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
   }
 
 
-  System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
+  System.out.println("-----------------------Request Completed for writing file "+Filename+" with contents "+ Contents+"-----------------------" );
    //files.put(Filename, Contents);
    //return result;
 }
@@ -423,11 +423,11 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 
 
 	 String result="*** FILE NOT FOUND ***";
-	 System.out.println("Request for Reading file "+ Filename+" came to Coordinator...\nAssembling write quorom...");
+	 System.out.println("---------------------------------Request for Reading file "+ Filename+" came to Coordinator...\nAssembling Read quorom...-------------------------");
 
 	 //Assembling read quorom here
 	 Nr=randInt(N-Nw,N);
-	 System.out.println("Total Number of Replicas "+N+"Write quorom size is.."+Nw+" Read Quorum size is "+Nr);
+	 System.out.println("Total Number of Replicas "+N+"  Write quorom size is.."+Nw+"  Read Quorum size is "+Nr);
 
 	 ArrayList<Integer> quorom_indexes = uniquerands(Nr,N);
 	 int latestVersion=0;
@@ -508,7 +508,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 	 }
 
 
-	 System.out.println("Request completed for file"+Filename+" with contents "+ result );
+	 System.out.println("--------------------------Request completed for file "+Filename+" with contents "+ result+"---------------------------------------" );
 	  //files.put(Filename, Contents);
 	  return result;
 
