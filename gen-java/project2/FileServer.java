@@ -8,6 +8,7 @@ import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TServer.Args;
 import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadedServer;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -54,7 +55,7 @@ public static int lastUpdatedReplica = 0;
 	  //nodeName = new String(getHostAddress());
 
    TServerTransport serverTransport = new TServerSocket(nodePort);
-   TServer server = new TSimpleServer(
+   TServer server = new TThreadServer(
      new Args(serverTransport).processor(processor));
 
    System.out.println("Establishing connection with the SuperNode...");
