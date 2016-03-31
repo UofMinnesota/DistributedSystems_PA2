@@ -64,6 +64,7 @@ public class FileServiceHandler implements FileService.Iface {
   private static NodeName CoordinatorName;
   private static NodeName myName;
   private static String joinResult;
+  private static int threads [] = new int[10000];
   private static int Nr, Nw, N;
   public static BlockingQueue executeQueue = new ArrayBlockingQueue(1024);
   private Random randomGenerator = new Random();
@@ -92,7 +93,19 @@ public class FileServiceHandler implements FileService.Iface {
     //maxNumNodes = max;
 	  myName = new NodeName(name,port,0);
 	  isCoordinator = isC;
+    for(int x = 0; x<threads.length; x++)
+    {
+      threads[x] = 0;
+    }
+  }
 
+  public Boolean areThreadsRunning()
+  {
+    for(int x = 0; x<threads.length; x++)
+    {
+      if(threads[x] == 1) return true;
+    }
+    return false;
   }
 
   public static NodeName getMyName(){
@@ -358,6 +371,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 
  @Override
  public boolean serverWriteReq(final String Filename, final String Contents) throws TException {
+
    try {
       if(isRunningBg == false)
       {
@@ -370,7 +384,37 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
               //executeQueue.put(newInfo);
               for(;;)
               {
-              asyncServerWriteReq((UpdateInfo)executeQueue.take());
+              //asyncServerWriteReq((UpdateInfo)executeQueue.take
+              UpdateInfo current = (UpdateInfo)executeQueue.take();
+              while(current.isWrite == true && areThreadsRunning() == true)
+              {
+                Thread.sleep(50);
+              }
+
+              final UpdateInfo uInf = current;
+
+              Runnable simple2 = new Runnable() {
+
+                public void run() {
+                  //updateReplicas();
+
+                  try{
+                  //executeQueue.put(newInfo);
+                  int threadId = (int)Thread.currentThread().getId();
+                  threads[threadId] = 1;
+                  asyncServerWriteReq((UpdateInfo)uInf);
+                  threads[threadId] = 0;
+                  //Thread.sleep(100);
+
+                }
+                catch(Exception e){
+                  System.out.println("Not added..");
+                }
+                  //
+                }
+              };
+              //uInf = (UpdateInfo)executeQueue.take();
+              new Thread(simple2).start();
               Thread.sleep(100);
             }
             }
@@ -390,8 +434,8 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
         }
 
 
-       Runnable simple = new Runnable() {
-         public void run() {
+       //Runnable simple = new Runnable() {
+      //   public void run() {
            //updateReplicas();
            long unixTime = System.currentTimeMillis() / 1000L;
            UpdateInfo newInfo = new UpdateInfo();
@@ -401,15 +445,15 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
            try{
            executeQueue.put(newInfo);
            System.out.println("Added to the queue.");
-         }
+        }
          catch(Exception e){
            System.out.println("Not added..");
          }
            //asyncServerWriteReq(Filename, Contents, unixTime);
-         }
-       };
+         //}
+       //};
 
-       new Thread(simple).start();
+       //new Thread(simple).start();
        System.out.println("Issuing serverWriteReq...");
      } catch (Exception x) {
        x.printStackTrace();
