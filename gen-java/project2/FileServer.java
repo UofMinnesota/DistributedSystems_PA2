@@ -43,6 +43,7 @@ static String nodeName;
 static String result;
 public static FileServiceHandler handler;
 public static FileService.Processor processor;
+public static int lastUpdatedReplica = 0;
 //static ArrayList<NodeName> ListOfNodes; // For coordinator
 //static
 
@@ -117,7 +118,11 @@ public static FileService.Processor processor;
       System.out.println("Issuing update to replica");
 
       ArrayList<NodeName> ListOfNodes = FileServiceHandler.getNodes();
-      int NodeID = randInt(0,ListOfNodes.size()); //random for testing purposes, should increment a var
+      int NodeID = lastUpdatedReplica++;//randInt(0,ListOfNodes.size()); //random for testing purposes, should increment a var
+      if(lastUpdatedReplica  >= ListOfNodes.size())
+      {
+        lastUpdatedReplica = 0;
+      }
       NodeName CurrentNode = ListOfNodes.get(NodeID);
 
       TTransport NodeTransport;
@@ -129,7 +134,7 @@ public static FileService.Processor processor;
       TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
       FileService.Client nodeclient = new FileService.Client(NodeProtocol);
 
-      /************String Contents = nodeclient.write(FileName, content);***********/
+      Boolean res = nodeclient.serverWrite("FileName", "content");
     }
     catch(Exception e){
       System.out.println("Not able to connect: ");
