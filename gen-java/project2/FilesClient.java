@@ -163,7 +163,7 @@ public static void readFile(String FileName){
 	try {
 		   TTransport SuperNodeTransport;
 
-		   String supernodeAddr = "csel-x30-10";
+		   String supernodeAddr = "csel-x32-10";
 		   if(USE_LOCAL) supernodeAddr = "localhost";
 		   SuperNodeTransport = new TSocket(supernodeAddr, 9090); // csel-x29-10
 		   SuperNodeTransport.open();
