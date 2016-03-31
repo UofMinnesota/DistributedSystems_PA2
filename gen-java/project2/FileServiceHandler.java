@@ -224,7 +224,7 @@ public class FileServiceHandler implements FileService.Iface {
 	 System.out.println("Request for write of file "+ Filename+" and contents "+Contents+" Came to Coordinator...\nAssembling write quorom...");
 	 
 	 //Assembling write quorom here
-	 Nw=randInt(Math.round(N/2),N);
+	 Nw=randInt(Math.round((N+1)/2),N);
 	 System.out.println("Write quorom size is.."+Nw);
 	 
 	 ArrayList<Integer> quorom_indexes = uniquerands(Nw,N);
