@@ -49,6 +49,7 @@ public class FileServiceHandler implements FileService.Iface {
   private static NodeName CoordinatorName;
   private static NodeName myName;
   private static String joinResult; 
+  private static int Nr, Nw, N;
   private Random randomGenerator = new Random();
 
   public static ArrayList<NodeName> getListOfNodes(){
@@ -158,10 +159,39 @@ public class FileServiceHandler implements FileService.Iface {
 
  @Override
  public boolean clientWrite(String Filename, String Contents) throws TException {
+	 
+	 boolean result= false;
+	 
+	 // TODO send request to coordinator if I am not the coordinator
+	 if(isCoordinator){
+		 System.out.println("\n\n\nI am the coordinator... and I got a write request\n\n\n\n");
+		 
+	 }
+	 else{
+		 System.out.println("\n\n\nI am NOT the coordinator... and I got a write request\n\n\n\n");
+			try {
+				TTransport NodeTransport;
+				System.out.println("Connecting to: " + CoordinatorName.getIP() + ":" + CoordinatorName.getPort());
+				NodeTransport = new TSocket(CoordinatorName.getIP(),CoordinatorName.getPort());
+				NodeTransport.open();
+
+				TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
+				FileService.Client nodeclient = new FileService.Client(
+						NodeProtocol);
+
+				result = nodeclient.serverWriteReq(Filename, Contents);
+					
+				
+				NodeTransport.close();
+			} catch (TException xx) {
+				xx.printStackTrace();
+			}
+			
+	 }
   
    System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
   files.put(Filename, Contents);
-  return true;
+  return result;
  }
 
  
@@ -187,6 +217,35 @@ public class FileServiceHandler implements FileService.Iface {
      if(files.containsKey(Filename)) return (files.get(Filename));
      return "*** FILE NOT FOUND ***";
  }
+ 
+ 
+ @Override
+ public boolean serverWriteReq(String Filename, String Contents) throws TException {
+	 System.out.println("Request for write of file "+ Filename+" and contents "+Contents+" Came to Coordinator...\nAssembling write quorom...");
+	 
+	 //Assembling write quorom here
+	 Nw=randInt(Math.round(N/2),N);
+	 System.out.println("Write quorom size is.."+Nw);
+	 
+	 ArrayList<Integer> quorom_indexes = uniquerands(Nw,N);
+	 
+	 for(int i=0; i<quorom_indexes.size();i++){
+		 System.out.println("Write list is .."+quorom_indexes.get(i));
+	 }
+	 
+	 
+	 System.out.println("Request received for writing file"+Filename+" with contents "+ Contents );
+	  files.put(Filename, Contents);
+	  return true;
+ }
+ 
+
+ @Override
+ public String serverReadReq(String Filename) throws TException {
+	 
+     if(files.containsKey(Filename)) return (files.get(Filename));
+     return "*** FILE NOT FOUND ***";
+ }
 
  @Override
  public int getVersionNumber(String Filename) throws TException {
@@ -198,6 +257,8 @@ public class FileServiceHandler implements FileService.Iface {
 	 
 	 System.out.println("List of servers obtained..."+ServerList);
 	 ListOfNodes=strToNodeNameArray(ServerList);
+	 N = ListOfNodes.size();
+	 System.out.println("Total size of replica Network ..."+N);
    return true;
  }
  
@@ -208,6 +269,29 @@ public class FileServiceHandler implements FileService.Iface {
 	return true; 
  }
  
+ public static int randInt(int min, int max) {
+
+
+ Random rand = new Random();
+ int randomNum = rand.nextInt((max - min) + 1) + min;
+
+ return randomNum;
+}
+ 
+ public static ArrayList<Integer> uniquerands(int required, int total){
+	 ArrayList<Integer> list = new ArrayList<Integer>();
+	 ArrayList<Integer> output = new ArrayList<Integer>();
+     for (int i=0; i<total; i++) {
+         list.add(new Integer(i));
+     }
+     Collections.shuffle(list);
+     for (int i=0; i<required; i++) {
+         output.add(list.get(i));
+     }
+     
+     return output;
+ 
+ }
  
 
 

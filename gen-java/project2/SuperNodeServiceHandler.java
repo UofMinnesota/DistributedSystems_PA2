@@ -106,7 +106,7 @@ public class SuperNodeServiceHandler implements SuperNodeService.Iface {
 								NodeProtocol);
 
 						nodeclient
-								.setCoordinatorInfo(ListOfNodes.get(x).address + ":" + String.valueOf(ListOfNodes.get(x).port));
+								.setCoordinatorInfo(CoordinatorName.address + ":" + String.valueOf(CoordinatorName.port));
 						NodeTransport.close();
 					} catch (TException xx) {
 						xx.printStackTrace();

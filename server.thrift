@@ -14,6 +14,12 @@ namespace java project2  // defines the namespace
             //update coordinator info to all nodes
             bool setCoordinatorInfo(1:string coordinator),
 
+            //Server->Coordinator request
+            //write
+            bool serverWriteReq(1:string Filename, 2:string Contents),
+            string serverReadReq(1:string Filename),
+            
+
 
             //Version numbers:
             //Enquire version number(get)
