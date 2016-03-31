@@ -368,8 +368,11 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 
               try{
               //executeQueue.put(newInfo);
+              for(;;)
+              {
               asyncServerWriteReq((UpdateInfo)executeQueue.take());
               Thread.sleep(100);
+            }
             }
             catch(Exception e){
               System.out.println("Not added..");
@@ -394,9 +397,10 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
            UpdateInfo newInfo = new UpdateInfo();
            newInfo.filename = Filename;
            newInfo.content = Contents;
+           newInfo.isWrite = true;
            try{
            executeQueue.put(newInfo);
-           System.out.println("After execute queue");
+           System.out.println("Added to the queue.");
          }
          catch(Exception e){
            System.out.println("Not added..");
@@ -422,10 +426,10 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 	 System.out.println("Request for Reading file "+ Filename+" came to Coordinator...\nAssembling write quorom...");
 
 	 //Assembling read quorom here
-	 Nw=randInt(N-Nw,N);
+	 Nr=randInt(N-Nw,N);
 	 System.out.println("Total Number of Replicas "+N+"Write quorom size is.."+Nw+" Read Quorum size is "+Nr);
 
-	 ArrayList<Integer> quorom_indexes = uniquerands(Nw,N);
+	 ArrayList<Integer> quorom_indexes = uniquerands(Nr,N);
 	 int latestVersion=0;
 	 int version=0;
 
