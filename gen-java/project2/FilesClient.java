@@ -57,6 +57,8 @@ public class FilesClient {
    String FileName="";
    String Contents="";
    String ReadInfo="";
+
+   
    if(args.length != 0)
    {
      mode = Integer.parseInt(args[0]);
@@ -73,18 +75,17 @@ public class FilesClient {
    
    if(mode == 0){
 	   writeFile(FileName,Contents);
+	   
    }
    
    if(mode == 1){
 	   readFile(FileName);
-//	   if(ReadInfo.equals("File not Found..")){
-//		   System.out.println("File "+ FileName+ " is not found in the server...");
-//	   }
-//	   else{
-//		   System.out.println("File "+ FileName+ " is found in the server...");
-//		   System.out.println("The contents of "+ FileName+ " is ...\n"+ReadInfo);
-//	   }
+	
    }
+   
+   
+   
+ 
  }
 
 

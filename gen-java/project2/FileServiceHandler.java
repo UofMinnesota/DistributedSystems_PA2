@@ -354,7 +354,9 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
   System.out.println("-----------------------Request for write of file "+ Filename+" and contents "+Contents+" Came to Coordinator...\nAssembling write quorom...---------------------");
 
   //Assembling write quorom here
+  //TODO Uncomment
   Nw=randInt(Math.round((N+1)/2),N);
+  //Nw = 4;
   System.out.println("Write quorom size is.."+Nw);
 
   ArrayList<Integer> quorom_indexes = uniquerands(Nw,N);
@@ -485,8 +487,12 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
                   //executeQueue.put(newInfo);
                   int threadId = (int)Thread.currentThread().getId();
                   threads[threadId] = 1;
-                  
+                  long start, end, time;
+                  start= System.currentTimeMillis();
                   asyncServerWriteReq((UpdateInfo)uInf);
+                  end= System.currentTimeMillis();
+           	   	  time=end-start;
+           	   	  System.out.println("Time for the write operation of file "+Filename+" is "+ time);
                   threads[threadId] = 0;
                   //Thread.sleep(100);
 
@@ -550,6 +556,9 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
  public String serverReadReq(String Filename) throws TException {
 	 
 	 System.out.println("Read request ...");
+	 long start, end, time;
+     start= System.currentTimeMillis();
+     
 	 while(writeCount >0)
 	 {	System.out.println("Writing in progress...... sleep");
 		 
@@ -574,7 +583,10 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
    NodeName NodeLatestCopy = new NodeName(" ",0,0); 
 	 boolean foundLatest=false;
    //Assembling read quorom here
+	 //TODO Uncomment
 	 Nr=randInt(N-Nw,N);
+	 //Nr=4;
+	 
 	 System.out.println("Total Number of Replicas "+N+"  Write quorom size is.."+Nw+"  Read Quorum size is "+Nr);
 
 	 ArrayList<Integer> quorom_indexes = uniquerands(Nr,N);
@@ -660,6 +672,10 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 	 }
 
 	 readCount--;
+	 end= System.currentTimeMillis();
+	 time=end-start;
+	 System.out.println("Time for the Read operation of file "+Filename+" is "+ time);
+	 
 	 System.out.println("--------------------------Request completed for file "+Filename+" with contents "+ result+"---------------------------------------" );
 	  //files.put(Filename, Contents);
 	  return result;
