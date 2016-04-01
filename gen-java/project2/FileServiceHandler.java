@@ -43,28 +43,68 @@ public class FileServiceHandler implements FileService.Iface {
 
   }
 
-  public static class  UpdateInfo{
-    String address = "";
-    int port = 0;
-    int timestamp = 0;
-    Boolean isWrite = false;
-    String filename = "";
-    String content = "";
-
+  public class  UpdateInfo{
+    
+    private NodeName node;
+    private Boolean isWrite;
+    private String filename;
+    private String content;
+    private int version;
+    
+    UpdateInfo(NodeName n, String fn, int V, String c){
+    	node=n;
+    	filename=fn;
+    	version=V;
+    	content =c;
+    }
+    
+    UpdateInfo(){
+    	
+    }
+    
+    String getFilename(){
+    	return filename;
+    }
+    
+    String getNodename(){
+    	return node.getIP();
+    }
+    
+    String getContent(){
+    	return content;
+    }
+    
+    int getVersion(){
+    	return version;
+    }
+    
+    int nodePort(){
+    	return node.getPort();
+    }
+    
+    
 
   }
+  
+  
 
   private static ArrayList<NodeName> ListOfNodes = new ArrayList<NodeName>();
   private static Map<String, FileStore> filestore = new HashMap<String, FileStore>();
 
+  private static Map<String,UpdateInfo> fileinfo = new HashMap<String, UpdateInfo>();
+  
   private static String DHTList;
   //private static int maxNumNodes = 16;
   private static boolean isCoordinator = false;
   private static boolean isRunningBg = false;
   private static NodeName CoordinatorName;
   private static NodeName myName;
+  private static int readCount = 0;
+  private static int writeCount = 0;
+  private static boolean writeSignal=false;
   private static String joinResult;
   private static int threads [] = new int[10000];
+  public static int exte0x3255 = 0;
   private static int Nr, Nw, N;
   public static BlockingQueue executeQueue = new ArrayBlockingQueue(1024);
   private Random randomGenerator = new Random();
@@ -93,14 +133,22 @@ public class FileServiceHandler implements FileService.Iface {
     //maxNumNodes = max;
 	  myName = new NodeName(name,port,0);
 	  isCoordinator = isC;
+	  if(exte0x3255 == 1) return;
     for(int x = 0; x<threads.length; x++)
     {
       threads[x] = 0;
     }
+    exte0x3255 = 1;
+  }
+  
+  public static Map<String,UpdateInfo> getfileinfo()
+  {
+	  return fileinfo;
   }
 
   public Boolean areThreadsRunning()
   {
+	  if(exte0x3255 == 0) return true;
     for(int x = 0; x<threads.length; x++)
     {
       if(threads[x] == 1) return true;
@@ -178,7 +226,7 @@ public class FileServiceHandler implements FileService.Iface {
 
  @Override
  public boolean clientWrite(String Filename, String Contents) throws TException {
-
+	 
 	 boolean result= false;
 
 	 // TODO send request to coordinator if I am not the coordinator
@@ -210,14 +258,16 @@ public class FileServiceHandler implements FileService.Iface {
 			}
 
 	 }
-
+	 
   //filestore.put(Filename, Contents);
+	 
   return result;
  }
 
 
  @Override
  public String clientRead(String Filename) throws TException {
+	
 	 String result= "*** FILE NOT FOUND ***";
 
 	 // TODO send request to coordinator if I am not the coordinator
@@ -250,6 +300,8 @@ public class FileServiceHandler implements FileService.Iface {
 	 }
 
   //filestore.put(Filename, Contents);
+	 
+	 
      return result;
  }
 
@@ -276,8 +328,28 @@ public class FileServiceHandler implements FileService.Iface {
 
 public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 {
+	int threadId = (int)Thread.currentThread().getId();
+	 while(readCount > 0 && writeCount >0)
+	 { 
+		 //System.out.println("Reading in progress...... sleep");
+		 try{
+		 Thread.sleep(10);
+	 	}catch(Exception e) {
+		 e.printStackTrace();
+	 	}
+	 }
+	 writeCount++;
+    threads[threadId] = 1;
+//    try{
+//		 //Thread.sleep(10000);
+//	 }catch(Exception e) {
+//		 e.printStackTrace();
+//	 }
+	 System.out.println("Write request ...");
+	 
   String Filename = updIn.filename;
   String Contents = updIn.content;
+  
   boolean result=false;
   System.out.println("-----------------------Request for write of file "+ Filename+" and contents "+Contents+" Came to Coordinator...\nAssembling write quorom...---------------------");
 
@@ -302,6 +374,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
      if(version>latestVersion){
        latestVersion = version;
      }
+     
 
    }
    else{
@@ -328,11 +401,13 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
        xx.printStackTrace();
      }
     }
+   
   }
 
   System.out.println("Latest Version for the file "+Filename+" is "+latestVersion );
-  System.out.println("Writing back file "+Filename+" as version "+latestVersion++ );
-
+  System.out.println("Writing back file "+Filename+" as version "+latestVersion+1 );
+  
+  latestVersion++;
 
   for(int i=0; i<quorom_indexes.size();i++){
     System.out.println("Write list is .."+quorom_indexes.get(i));
@@ -340,8 +415,11 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
     if(myName.getIP().equals(ListOfNodes.get(quorom_indexes.get(i)).getIP()) && myName.getPort() == ListOfNodes.get(quorom_indexes.get(i)).getPort()){
 
        System.out.println("Writing File "+Filename+" with latest version "+latestVersion+" to the Quorom..." );
+       
        result = serverWrite(Filename, Contents, latestVersion);
-
+       //update also sent to fileinfo
+       UpdateInfo finfo = new UpdateInfo(ListOfNodes.get(quorom_indexes.get(i)), Filename, latestVersion, Contents);
+       fileinfo.put(Filename, finfo);
     }
     else{
       try {
@@ -354,8 +432,11 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
        FileService.Client nodeclient = new FileService.Client(
            NodeProtocol);
        System.out.println("Writing File "+Filename+" with latest version "+latestVersion+" to the Quorom..." );
+     
        result = nodeclient.serverWrite(Filename, Contents, latestVersion);
-
+     //update also sent to fileinfo
+       UpdateInfo finfo = new UpdateInfo(ListOfNodes.get(quorom_indexes.get(i)), Filename, latestVersion, Contents);
+       fileinfo.put(Filename, finfo);
        NodeTransport.close();
      } catch (TException xx) {
        xx.printStackTrace();
@@ -366,6 +447,8 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 
   System.out.println("-----------------------Request Completed for writing file "+Filename+" with contents "+ Contents+"-----------------------" );
    //files.put(Filename, Contents);
+  writeCount--;
+  threads[threadId] = 0;
    //return result;
 }
 
@@ -402,6 +485,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
                   //executeQueue.put(newInfo);
                   int threadId = (int)Thread.currentThread().getId();
                   threads[threadId] = 1;
+                  
                   asyncServerWriteReq((UpdateInfo)uInf);
                   threads[threadId] = 0;
                   //Thread.sleep(100);
@@ -464,6 +548,24 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 
  @Override
  public String serverReadReq(String Filename) throws TException {
+	 
+	 System.out.println("Read request ...");
+	 while(writeCount >0)
+	 {	System.out.println("Writing in progress...... sleep");
+		 
+		 try{
+		 Thread.sleep(10);
+	 	}catch(Exception e) {
+		 e.printStackTrace();
+	 	}
+	 }
+	 readCount++;
+//	 try{
+//		 if(areThreadsRunning())
+//			 Thread.sleep(2000);
+//	 }catch(Exception e) {
+//		 e.printStackTrace();
+//	 }
 
 
 	 String result="*** FILE NOT FOUND ***";
@@ -557,7 +659,7 @@ public void asyncServerWriteReq(UpdateInfo updIn) throws TException
 		 }
 	 }
 
-
+	 readCount--;
 	 System.out.println("--------------------------Request completed for file "+Filename+" with contents "+ result+"---------------------------------------" );
 	  //files.put(Filename, Contents);
 	  return result;

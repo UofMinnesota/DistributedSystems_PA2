@@ -17,7 +17,9 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import java.util.Random;
 import org.apache.thrift.TException;
+
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
 
 
@@ -118,11 +120,11 @@ public static int lastUpdatedReplica = 0;
    for(;;)
    {
      try {
-          Thread.sleep(1000);                 //1000 milliseconds is one second.
+          Thread.sleep(10000);                 //1000 milliseconds is one second.
       } catch(InterruptedException ex) {
           Thread.currentThread().interrupt();
       }
-      System.out.println("Issuing update to replica");
+      System.out.println("Issuing update to replica....");
 
       ArrayList<NodeName> ListOfNodes = FileServiceHandler.getNodes();
       int NodeID = lastUpdatedReplica++;//randInt(0,ListOfNodes.size()); //random for testing purposes, should increment a var
@@ -131,17 +133,20 @@ public static int lastUpdatedReplica = 0;
         lastUpdatedReplica = 0;
       }
       NodeName CurrentNode = ListOfNodes.get(NodeID);
-
+      Map<String,FileServiceHandler.UpdateInfo> list = FileServiceHandler.getfileinfo();
       TTransport NodeTransport;
       System.out.println("Connecting to: " + CurrentNode.getIP() + ":" + CurrentNode.getPort()+":"+ CurrentNode.getID());
+      
       NodeTransport = new TSocket(CurrentNode.getIP(), CurrentNode.getPort());
       try{
       NodeTransport.open();
-
+      
       TProtocol NodeProtocol = new TBinaryProtocol(NodeTransport);
       FileService.Client nodeclient = new FileService.Client(NodeProtocol);
-
-      Boolean res = nodeclient.serverWrite("FileName", "content", 1);
+      for (String name: list.keySet()){
+    	  System.out.println("Writing File "+ name+ "Version: "+list.get(name).getVersion()+ " to node "+CurrentNode.getIP() + ":" + CurrentNode.getPort());	
+    	  nodeclient.serverWrite(name, list.get(name).getContent(), list.get(name).getVersion());
+      }
     }
     catch(Exception e){
       System.out.println("Not able to connect: ");
@@ -178,7 +183,7 @@ public static void runBackgroundUpdateService(int port)
 	   if(args[0].equals("coordinator")){
 		   isCoordinator = true;
 		   System.out.println("I am a coordinator");
-       //runBackgroundUpdateService(9092);
+		   runBackgroundUpdateService(9092);
 	   }
    }
    //System.out.println("My name is"+nodeName);

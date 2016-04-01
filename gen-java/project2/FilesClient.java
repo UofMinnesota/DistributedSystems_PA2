@@ -140,7 +140,7 @@ public class FilesClient {
 		   FileService.Client nodeclient = new FileService.Client(NodeProtocol);
 
 		   if(nodeclient.clientWrite(FileName, Contents) == true){
-			  System.out.println("write to File "+ FileName+" successful...");
+			  System.out.println("write to File "+ FileName+" has been pushed...");
 		   }
 		   else{
 			   System.out.println("write to File "+ FileName+" NOT successful...");
