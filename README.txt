@@ -1,5 +1,3 @@
-Sathishkumar Vijayakumar - 5068160 - vijay072@umn.edu
-Bernardo Augusto Godinho de Oliveira - 5217756 - godin040@umn.edu
 
 ###### WARNING ######
 Change USE_LOCAL in both FilesClient.java and Node.java to true for localhost
